@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellar Lab v1.5.1 - Multiverse</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="header-panel">
+        <div class="row">
+            <button id="btn-evolve" class="toggle-off" style="background: #e67e22; color: white;">EVOLUTION: OFF</button>
+            <button id="btn-step-evolve" style="background: #d35400; color: white;">EVOLVE STAR</button>
+            <button id="btn-nebula" style="background: #8e44ad; color: white;">FORM NEBULA</button>
+            <button id="btn-switch-space" style="background: #16a085; color: white;">SWITCH SPACE</button>
+        </div>
+        <div class="row" style="margin-top:10px;">
+            <input type="text" id="searchInput" placeholder="Search stars, types, or galaxies: Rigel, Spiral, Milky Way, Andromeda...">
+            <button id="btn-universal-search" style="width: auto; background: #2980b9; color: white; margin-bottom: 0;">SEARCH</button>
+        </div>
+    </div>
+
+    <!-- Active Stellar Lab View -->
+    <div id="stellar-lab-view">
+        <div class="diagram-box">
+            <svg id="hr-diagram" viewBox="0 0 400 450">
+                <g opacity="0.15">
+                    <path d="M 60 40 Q 100 280 360 380" stroke="#fff" stroke-width="45" fill="none" stroke-linecap="round" />
+                    <ellipse cx="320" cy="100" rx="60" ry="40" fill="#ff4500" />
+                    <ellipse cx="100" cy="350" rx="50" ry="25" fill="#4a90e2" />
+                </g>
+                <line x1="45" y1="400" x2="380" y2="400" stroke="#444" stroke-width="2" />
+                <line x1="45" y1="20" x2="45" y2="400" stroke="#444" stroke-width="2" />
+                <g id="star-points"></g>
+            </svg>
+        </div>
+
+        <div class="visual-container" id="v-cont">
+            <div id="space-bg"></div>
+            <div id="star-render">
+                <div class="diffraction-cross"></div>
+                <div class="stripes"></div>
+            </div>
+            <div id="supernova-flash"></div>
+        </div>
+
+        <div class="stats-panel">
+            <div class="grid">
+                <div class="item"><span class="label">Status</span><span id="type-val" class="value">-</span></div>
+                <div class="item"><span class="label">Category</span><span id="cat-val" class="value">-</span></div>
+                <div class="item"><span class="label">Mass</span><span id="m-val" class="value">-</span></div>
+                <div class="item"><span class="label">Temp</span><span id="t-val" class="value">-</span></div>
+                <div class="item"><span class="label">Abs Mag (Mv)</span><span id="mv-val" class="value">-</span></div>
+                <div class="item"><span class="label">Radius</span><span id="r-val" class="value">-</span></div>
+            </div>
+            <button id="btn-gen">GENERATE / RANDOM STAR</button>
+            <button id="btn-reset">RESET VIEW</button>
+        </div>
+    </div>
+
+    <!-- Alternate Space View: Galaxy Rendering Engine -->
+    <div id="alternate-space-view" class="hidden-space">
+        <canvas id="galaxy-canvas"></canvas>
+
+        <button id="btn-gen-galaxy" style="position: absolute; top: 12px; right: 12px; width: auto; background: #8e44ad; color: white; z-index: 10;">GENERATE GALAXY</button>
+        
+        <!-- Galaxy Data Stats Bar -->
+        <div class="galaxy-stats-bar">
+            <div class="galaxy-stat-box">
+                <span class="galaxy-stat-label">Name / Type</span>
+                <span id="galaxy-name-val" class="galaxy-stat-value">-</span>
+            </div>
+            <div class="galaxy-stat-box">
+                <span class="galaxy-stat-label">Diameter</span>
+                <span id="galaxy-diameter-val" class="galaxy-stat-value">- ly</span>
+            </div>
+            <div class="galaxy-stat-box">
+                <span class="galaxy-stat-label">Apparent Mag</span>
+                <span id="galaxy-appmag-val" class="galaxy-stat-value">-</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
