@@ -1,0 +1,127 @@
+html, body { background: #050505; color: #eee; font-family: sans-serif; padding: 15px; margin: 0; overflow-x: hidden; }
+.header-panel, .stats-panel, .visual-container, .diagram-box { 
+    background: #111; padding: 15px; border-radius: 12px; border: 1px solid #222; margin-bottom: 12px; position: relative;
+}
+.row { display: flex; gap: 10px; }
+input { background: #1a1a1a; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 8px; flex: 1; }
+
+#space-bg {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: #050505; transition: background 8s ease; z-index: 1;
+}
+
+.visual-container { height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+
+#star-render { 
+    border-radius: 50% !important; z-index: 5; position: absolute;
+    transition: background-color 0.8s, box-shadow 0.8s, width 0.8s, height 0.8s, opacity 0.8s;
+}
+
+/* Supernova Boom Effect */
+#supernova-flash {
+    position: absolute; width: 10px; height: 10px; border-radius: 50%;
+    background: radial-gradient(circle, #ffffff 0%, #ff3300 50%, transparent 100%);
+    opacity: 0; z-index: 6; pointer-events: none;
+    transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+}
+.boom-active #supernova-flash {
+    opacity: 1;
+    transform: scale(40);
+}
+
+/* Diffraction Spike Flare Effect */
+.diffraction-cross {
+    display: none; position: absolute; top: 50%; left: 50%; width: 260%; height: 260%;
+    transform: translate(-50%, -50%); pointer-events: none;
+}
+.diffraction-cross::before, .diffraction-cross::after {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 75%);
+    transform: translate(-50%, -50%);
+}
+.diffraction-cross::before { width: 100%; height: 3px; }
+.diffraction-cross::after { width: 3px; height: 100%; }
+.has-cross .diffraction-cross { display: block; }
+
+/* Brown Dwarf Texture */
+.stripes {
+    display: none; width: 100%; height: 100%; border-radius: 50%;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.2), rgba(0,0,0,0.2) 5px, transparent 5px, transparent 15px);
+    opacity: 0.5;
+}
+.is-brown-dwarf .stripes { display: block; }
+
+.nebula-style {
+    filter: blur(20px); opacity: 0.6;
+    background: radial-gradient(circle, #8e44ad, #2980b9) !important;
+    border-radius: 40% 60% 50% 50% / 50% 40% 60% 50% !important;
+}
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.item { background: #1a1a1a; padding: 10px; border-radius: 8px; border-bottom: 2px solid #333; }
+.label { color: #666; font-size: 10px; text-transform: uppercase; }
+.value { color: #4a90e2; font-family: monospace; font-size: 14px; font-weight: bold; display: block; }
+
+button { width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; margin-bottom: 5px; }
+#btn-gen { background: #238636; color: white; }
+#btn-reset { background: #333; color: #aaa; }
+
+/* View Switching Rules */
+.hidden-space { display: none !important; }
+
+/* Galaxy Canvas Styles */
+#alternate-space-view {
+    position: relative;
+    height: 65vh;
+    background: #020205;
+    border: 1px solid #222;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+#galaxy-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Bottom Stats Bar Overlay */
+.galaxy-stats-bar {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.galaxy-stat-box {
+    background: rgba(17, 17, 17, 0.85);
+    backdrop-filter: blur(4px);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 8px 14px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.galaxy-stat-label {
+    color: #888;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.galaxy-stat-value {
+    color: #2ecc71;
+    font-family: monospace;
+    font-size: 15px;
+    font-weight: bold;
+    margin-top: 2px;
+}
+
