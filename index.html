@@ -3,21 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stellar Lab v1.5.1 - Multiverse</title>
-    <link rel="stylesheet" href="style.css">
+    <title>UniSim v1.0.0 - Interactive Universe Simulator</title>
+    <style>
+        html, body { 
+            background: #050505; 
+            color: #eee; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            padding: 15px; 
+            margin: 0; 
+            overflow-x: hidden; 
+        }
+        .header-panel, .stats-panel, .visual-container, .diagram-box { 
+            background: #111; 
+            padding: 15px; 
+            border-radius: 12px; 
+            border: 1px solid #222; 
+            margin-bottom: 12px; 
+            position: relative;
+        }
+        .row { display: flex; gap: 10px; flex-wrap: wrap; }
+        input, select { 
+            background: #1a1a1a; 
+            color: #fff; 
+            border: 1px solid #444; 
+            padding: 10px; 
+            border-radius: 8px; 
+            font-size: 14px;
+        }
+        input { flex: 1; }
+        select { cursor: pointer; font-weight: bold; }
+
+        #space-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #050505; transition: background 8s ease; z-index: 1;
+        }
+
+        .visual-container { height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+
+        #star-render { 
+            border-radius: 50% !important; z-index: 5; position: absolute;
+            transition: background-color 0.8s, box-shadow 0.8s, width 0.8s, height 0.8s, opacity 0.8s;
+        }
+
+        /* Supernova Boom Effect */
+        #supernova-flash {
+            position: absolute; width: 10px; height: 10px; border-radius: 50%;
+            background: radial-gradient(circle, #ffffff 0%, #ff3300 50%, transparent 100%);
+            opacity: 0; z-index: 6; pointer-events: none;
+            transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+        }
+        .boom-active #supernova-flash {
+            opacity: 1;
+            transform: scale(40);
+        }
+
+        /* Diffraction Spike Flare Effect */
+        .diffraction-cross {
+            display: none; position: absolute; top: 50%; left: 50%; width: 260%; height: 260%;
+            transform: translate(-50%, -50%); pointer-events: none;
+        }
+        .diffraction-cross::before, .diffraction-cross::after {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 75%);
+            transform: translate(-50%, -50%);
+        }
+        .diffraction-cross::before { width: 100%; height: 3px; }
+        .diffraction-cross::after { width: 3px; height: 100%; }
+        .has-cross .diffraction-cross { display: block; }
+
+        /* Brown Dwarf Texture */
+        .stripes {
+            display: none; width: 100%; height: 100%; border-radius: 50%;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.2), rgba(0,0,0,0.2) 5px, transparent 5px, transparent 15px);
+            opacity: 0.5;
+        }
+        .is-brown-dwarf .stripes { display: block; }
+
+        .nebula-style {
+            filter: blur(20px); opacity: 0.6;
+            background: radial-gradient(circle, #8e44ad, #2980b9) !important;
+            border-radius: 40% 60% 50% 50% / 50% 40% 60% 50% !important;
+        }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .item { background: #1a1a1a; padding: 10px; border-radius: 8px; border-bottom: 2px solid #333; }
+        .label { color: #666; font-size: 10px; text-transform: uppercase; }
+        .value { color: #4a90e2; font-family: monospace; font-size: 14px; font-weight: bold; display: block; }
+
+        button { flex: 1; min-width: 120px; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; margin-bottom: 5px; }
+        #btn-gen { width: 100%; background: #238636; color: white; }
+        #btn-reset { width: 100%; background: #333; color: #aaa; }
+
+        .hidden-space { display: none !important; }
+
+        #alternate-space-view {
+            position: relative; height: 65vh; background: #020205;
+            border: 1px solid #222; border-radius: 12px; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+
+        #galaxy-canvas { width: 100%; height: 100%; display: block; }
+
+        .galaxy-stats-bar {
+            position: absolute; bottom: 12px; left: 12px; right: 12px;
+            display: flex; gap: 10px; z-index: 10; pointer-events: none;
+        }
+
+        .galaxy-stat-box {
+            background: rgba(17, 17, 17, 0.85); backdrop-filter: blur(4px);
+            border: 1px solid #333; border-radius: 8px; padding: 8px 14px;
+            flex: 1; display: flex; flex-direction: column;
+        }
+
+        .galaxy-stat-label { color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .galaxy-stat-value { color: #2ecc71; font-family: monospace; font-size: 15px; font-weight: bold; margin-top: 2px; }
+
+        /* Grey Corner Version Watermark */
+        .version-tag {
+            position: fixed;
+            bottom: 8px;
+            right: 12px;
+            color: #555555;
+            font-size: 11px;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 999;
+            user-select: none;
+        }
+    </style>
 </head>
 <body>
 
+    <!-- Grey Corner Version Display -->
+    <div class="version-tag">ver.1.0</div>
+
     <div class="header-panel">
         <div class="row">
-            <button id="btn-evolve" class="toggle-off" style="background: #e67e22; color: white;">EVOLUTION: OFF</button>
+            <select id="lang-select">
+                <option value="EN">EN</option>
+                <option value="FR">FR</option>
+                <option value="ZH">ZH</option>
+                <option value="ES">ES</option>
+                <option value="DE">DE</option>
+            </select>
+            <button id="btn-evolve" style="background: #e67e22; color: white;">EVOLUTION: OFF</button>
             <button id="btn-step-evolve" style="background: #d35400; color: white;">EVOLVE STAR</button>
             <button id="btn-nebula" style="background: #8e44ad; color: white;">FORM NEBULA</button>
             <button id="btn-switch-space" style="background: #16a085; color: white;">SWITCH SPACE</button>
         </div>
         <div class="row" style="margin-top:10px;">
-            <input type="text" id="searchInput" placeholder="Search stars, types, or galaxies: Rigel, Spiral, Milky Way, Andromeda...">
-            <button id="btn-universal-search" style="width: auto; background: #2980b9; color: white; margin-bottom: 0;">SEARCH</button>
+            <input type="text" id="searchInput" placeholder="Search stars, types, or galaxies: Rigel, Spiral, Milky Way...">
+            <button id="btn-universal-search" style="flex: 0 0 auto; width: auto; background: #2980b9; color: white; margin-bottom: 0;">SEARCH</button>
         </div>
     </div>
 
@@ -47,12 +183,12 @@
 
         <div class="stats-panel">
             <div class="grid">
-                <div class="item"><span class="label">Status</span><span id="type-val" class="value">-</span></div>
-                <div class="item"><span class="label">Category</span><span id="cat-val" class="value">-</span></div>
-                <div class="item"><span class="label">Mass</span><span id="m-val" class="value">-</span></div>
-                <div class="item"><span class="label">Temp</span><span id="t-val" class="value">-</span></div>
-                <div class="item"><span class="label">Abs Mag (Mv)</span><span id="mv-val" class="value">-</span></div>
-                <div class="item"><span class="label">Radius</span><span id="r-val" class="value">-</span></div>
+                <div class="item"><span class="label" id="lbl-status">Status</span><span id="type-val" class="value">-</span></div>
+                <div class="item"><span class="label" id="lbl-category">Category</span><span id="cat-val" class="value">-</span></div>
+                <div class="item"><span class="label" id="lbl-mass">Mass</span><span id="m-val" class="value">-</span></div>
+                <div class="item"><span class="label" id="lbl-temp">Temp</span><span id="t-val" class="value">-</span></div>
+                <div class="item"><span class="label" id="lbl-mv">Abs Mag (Mv)</span><span id="mv-val" class="value">-</span></div>
+                <div class="item"><span class="label" id="lbl-radius">Radius</span><span id="r-val" class="value">-</span></div>
             </div>
             <button id="btn-gen">GENERATE / RANDOM STAR</button>
             <button id="btn-reset">RESET VIEW</button>
@@ -65,24 +201,781 @@
 
         <button id="btn-gen-galaxy" style="position: absolute; top: 12px; right: 12px; width: auto; background: #8e44ad; color: white; z-index: 10;">GENERATE GALAXY</button>
         
-        <!-- Galaxy Data Stats Bar -->
         <div class="galaxy-stats-bar">
             <div class="galaxy-stat-box">
-                <span class="galaxy-stat-label">Name / Type</span>
+                <span class="galaxy-stat-label" id="lbl-galaxy-name">Name / Type</span>
                 <span id="galaxy-name-val" class="galaxy-stat-value">-</span>
             </div>
             <div class="galaxy-stat-box">
-                <span class="galaxy-stat-label">Diameter</span>
+                <span class="galaxy-stat-label" id="lbl-galaxy-diameter">Diameter</span>
                 <span id="galaxy-diameter-val" class="galaxy-stat-value">- ly</span>
             </div>
             <div class="galaxy-stat-box">
-                <span class="galaxy-stat-label">Apparent Mag</span>
+                <span class="galaxy-stat-label" id="lbl-galaxy-appmag">Apparent Mag</span>
                 <span id="galaxy-appmag-val" class="galaxy-stat-value">-</span>
             </div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        let currentLang = "EN";
+
+        const translations = {
+            EN: {
+                searchPlaceholder: "Search stars, types, or galaxies: Rigel, Spiral, Milky Way...",
+                btnSearch: "SEARCH",
+                btnEvolveOff: "EVOLUTION: OFF",
+                btnEvolveOn: "EVOLUTION: ON",
+                btnEvolveStep: "EVOLVE STAR",
+                btnNebula: "FORM NEBULA",
+                btnSwitchSpace: "SWITCH SPACE",
+                btnReturnLab: "RETURN TO LAB",
+                btnGenStar: "GENERATE / RANDOM STAR",
+                btnResetView: "RESET VIEW",
+                btnGenGalaxy: "GENERATE GALAXY",
+                lblStatus: "Status",
+                lblCategory: "Category",
+                lblMass: "Mass",
+                lblTemp: "Temp",
+                lblMv: "Abs Mag (Mv)",
+                lblRadius: "Radius",
+                lblGalName: "Name / Type",
+                lblGalDiameter: "Diameter",
+                lblGalAppMag: "Apparent Mag",
+                states: {
+                    "MAIN SEQUENCE": "MAIN SEQUENCE", "BINARY SYSTEM": "BINARY SYSTEM",
+                    "YELLOW GIANT": "YELLOW GIANT", "BLUE SUPERGIANT": "BLUE SUPERGIANT",
+                    "RED SUPERGIANT": "RED SUPERGIANT", "BRIGHT GIANT": "BRIGHT GIANT",
+                    "BLUE GIANT": "BLUE GIANT", "BLUE SUBGIANT": "BLUE SUBGIANT",
+                    "RED GIANT": "RED GIANT", "BROWN DWARF": "BROWN DWARF",
+                    "NEBULA": "NEBULA", "RED DWARF": "RED DWARF",
+                    "WHITE DWARF": "WHITE DWARF", "BLACK HOLE": "BLACK HOLE",
+                    "NEUTRON STAR": "NEUTRON STAR", "BOOM! (SUPERNOVA)": "BOOM! (SUPERNOVA)"
+                }
+            },
+            FR: {
+                searchPlaceholder: "Rechercher étoiles ou galaxies: Rigel, Spirale, Voie Lactée...",
+                btnSearch: "CHERCHER",
+                btnEvolveOff: "ÉVOLUTION: OFF",
+                btnEvolveOn: "ÉVOLUTION: ON",
+                btnEvolveStep: "ÉVOLUER ÉTOILE",
+                btnNebula: "CRÉER NÉBULEUSE",
+                btnSwitchSpace: "CHANGER D'ESPACE",
+                btnReturnLab: "RETOUR AU LABO",
+                btnGenStar: "GÉNÉRER ÉTOILE",
+                btnResetView: "RÉINITIALISER",
+                btnGenGalaxy: "GÉNÉRER GALAXIE",
+                lblStatus: "Statut",
+                lblCategory: "Catégorie",
+                lblMass: "Masse",
+                lblTemp: "Température",
+                lblMv: "Mag Abs (Mv)",
+                lblRadius: "Rayon",
+                lblGalName: "Nom / Type",
+                lblGalDiameter: "Diamètre",
+                lblGalAppMag: "Mag Apparente",
+                states: {
+                    "MAIN SEQUENCE": "SÉQUENCE PRINCIPALE", "BINARY SYSTEM": "SYSTÈME BINAIRE",
+                    "YELLOW GIANT": "GÉANTE JAUNE", "BLUE SUPERGIANT": "SUPERGÉANTE BLEUE",
+                    "RED SUPERGIANT": "SUPERGÉANTE ROUGE", "BRIGHT GIANT": "GÉANTE LUMINEUSE",
+                    "BLUE GIANT": "GÉANTE BLEUE", "BLUE SUBGIANT": "SOUS-GÉANTE BLEUE",
+                    "RED GIANT": "GÉANTE ROUGE", "BROWN DWARF": "NAINE BRUNE",
+                    "NEBULA": "NÉBULEUSE", "RED DWARF": "NAINE ROUGE",
+                    "WHITE DWARF": "NAINE BLANCHE", "BLACK HOLE": "TROU NOIR",
+                    "NEUTRON STAR": "ÉTOILE À NEUTRONS", "BOOM! (SUPERNOVA)": "SUPERNOVA !"
+                }
+            },
+            ZH: {
+                searchPlaceholder: "搜索恒星、类型或星系：参宿七、螺旋、银河系...",
+                btnSearch: "搜索",
+                btnEvolveOff: "演化: 关",
+                btnEvolveOn: "演化: 开",
+                btnEvolveStep: "演化恒星",
+                btnNebula: "形成星云",
+                btnSwitchSpace: "切换空间",
+                btnReturnLab: "返回实验室",
+                btnGenStar: "生成 / 随机恒星",
+                btnResetView: "重置视图",
+                btnGenGalaxy: "生成星系",
+                lblStatus: "状态",
+                lblCategory: "光谱分类",
+                lblMass: "质量",
+                lblTemp: "温度",
+                lblMv: "绝对星等 (Mv)",
+                lblRadius: "半径",
+                lblGalName: "名称 / 类型",
+                lblGalDiameter: "直径",
+                lblGalAppMag: "视星等",
+                states: {
+                    "MAIN SEQUENCE": "主序星", "BINARY SYSTEM": "双星系统",
+                    "YELLOW GIANT": "黄巨星", "BLUE SUPERGIANT": "蓝超巨星",
+                    "RED SUPERGIANT": "红超巨星", "BRIGHT GIANT": "亮巨星",
+                    "BLUE GIANT": "蓝巨星", "BLUE SUBGIANT": "蓝亚巨星",
+                    "RED GIANT": "红巨星", "BROWN DWARF": "棕矮星",
+                    "NEBULA": "星云", "RED DWARF": "红矮星",
+                    "WHITE DWARF": "白矮星", "BLACK HOLE": "黑洞",
+                    "NEUTRON STAR": "中子星", "BOOM! (SUPERNOVA)": "超新星爆发！"
+                }
+            },
+            ES: {
+                searchPlaceholder: "Buscar estrellas o galaxias: Rigel, Espiral, Vía Láctea...",
+                btnSearch: "BUSCAR",
+                btnEvolveOff: "EVOLUCIÓN: OFF",
+                btnEvolveOn: "EVOLUCIÓN: ON",
+                btnEvolveStep: "EVOLUCIONAR",
+                btnNebula: "CREAR NEBULOSA",
+                btnSwitchSpace: "CAMBIAR ESPACIO",
+                btnReturnLab: "VOLVER AL LAB",
+                btnGenStar: "GENERAR ESTRELLA",
+                btnResetView: "REINICIAR",
+                btnGenGalaxy: "GENERAR GALAXIA",
+                lblStatus: "Estado",
+                lblCategory: "Categoría",
+                lblMass: "Masa",
+                lblTemp: "Temp",
+                lblMv: "Mag Abs (Mv)",
+                lblRadius: "Radio",
+                lblGalName: "Nombre / Tipo",
+                lblGalDiameter: "Diámetro",
+                lblGalAppMag: "Mag Aparente",
+                states: {
+                    "MAIN SEQUENCE": "SECUENCIA PRINCIPAL", "BINARY SYSTEM": "SISTEMA BINARIO",
+                    "YELLOW GIANT": "GIGANTE AMARILLA", "BLUE SUPERGIANT": "SUPERGIGANTE AZUL",
+                    "RED SUPERGIANT": "SUPERGIGANTE ROJA", "BRIGHT GIANT": "GIGANTE BRILLANTE",
+                    "BLUE GIANT": "GIGANTE AZUL", "BLUE SUBGIANT": "SUBGIGANTE AZUL",
+                    "RED GIANT": "GIGANTE ROJA", "BROWN DWARF": "ENANA MARRÓN",
+                    "NEBULA": "NEBULOSA", "RED DWARF": "ENANA ROJA",
+                    "WHITE DWARF": "ENANA BLANCA", "BLACK HOLE": "AGUJERO NEGRO",
+                    "NEUTRON STAR": "ESTRELLA DE NEUTRONES", "BOOM! (SUPERNOVA)": "¡SUPERNOVA!"
+                }
+            },
+            DE: {
+                searchPlaceholder: "Sterne oder Galaxien suchen: Rigel, Spiral, Milchstraße...",
+                btnSearch: "SUCHEN",
+                btnEvolveOff: "EVOLUTION: AUS",
+                btnEvolveOn: "EVOLUTION: EIN",
+                btnEvolveStep: "STERN EVOLVIEREN",
+                btnNebula: "NEBEL ERZEUGEN",
+                btnSwitchSpace: "RAUM WECHSELN",
+                btnReturnLab: "ZURÜCK ZUM LAB",
+                btnGenStar: "STERN GENERIEREN",
+                btnResetView: "ZURÜCKSETZEN",
+                btnGenGalaxy: "GALAXIE GENERIEREN",
+                lblStatus: "Status",
+                lblCategory: "Kategorie",
+                lblMass: "Masse",
+                lblTemp: "Temp",
+                lblMv: "Abs. Mag (Mv)",
+                lblRadius: "Radius",
+                lblGalName: "Name / Typ",
+                lblGalDiameter: "Durchmesser",
+                lblGalAppMag: "Scheinb. Mag",
+                states: {
+                    "MAIN SEQUENCE": "HAUPTREIHE", "BINARY SYSTEM": "DOPPELSTERNSYSTEM",
+                    "YELLOW GIANT": "GELBER RIESE", "BLUE SUPERGIANT": "BLAUER SUPERRIESE",
+                    "RED SUPERGIANT": "ROTER SUPERRIESE", "BRIGHT GIANT": "HELLER RIESE",
+                    "BLUE GIANT": "BLAUER RIESE", "BLUE SUBGIANT": "BLAUER UNTERRIESE",
+                    "RED GIANT": "ROTER RIESE", "BROWN DWARF": "BRAUNER ZWERG",
+                    "NEBULA": "NEBEL", "RED DWARF": "ROTER ZWERG",
+                    "WHITE DWARF": "WEISSER ZWERG", "BLACK HOLE": "SCHWARZES LOCH",
+                    "NEUTRON STAR": "NEUTRONENSTERN", "BOOM! (SUPERNOVA)": "SUPERNOVA!"
+                }
+            }
+        };
+
+        function updateLanguageUI() {
+            const t = translations[currentLang];
+            document.getElementById('searchInput').placeholder = t.searchPlaceholder;
+            document.getElementById('btn-universal-search').innerText = t.btnSearch;
+            document.getElementById('btn-evolve').innerText = autoEvolve ? t.btnEvolveOn : t.btnEvolveOff;
+            document.getElementById('btn-step-evolve').innerText = t.btnEvolveStep;
+            document.getElementById('btn-nebula').innerText = t.btnNebula;
+            document.getElementById('btn-switch-space').innerText = currentSpaceMode === "LAB" ? t.btnSwitchSpace : t.btnReturnLab;
+            document.getElementById('btn-gen').innerText = t.btnGenStar;
+            document.getElementById('btn-reset').innerText = t.btnResetView;
+            document.getElementById('btn-gen-galaxy').innerText = t.btnGenGalaxy;
+
+            document.getElementById('lbl-status').innerText = t.lblStatus;
+            document.getElementById('lbl-category').innerText = t.lblCategory;
+            document.getElementById('lbl-mass').innerText = t.lblMass;
+            document.getElementById('lbl-temp').innerText = t.lblTemp;
+            document.getElementById('lbl-mv').innerText = t.lblMv;
+            document.getElementById('lbl-radius').innerText = t.lblRadius;
+            document.getElementById('lbl-galaxy-name').innerText = t.lblGalName;
+            document.getElementById('lbl-galaxy-diameter').innerText = t.lblGalDiameter;
+            document.getElementById('lbl-galaxy-appmag').innerText = t.lblGalAppMag;
+
+            updateVisuals();
+        }
+
+        document.getElementById('lang-select').onchange = function() {
+            currentLang = this.value;
+            updateLanguageUI();
+        };
+
+        const starDB = {
+            "sun": { t: 5778, m: 1.0, r: 1.0, l: 1.0, mv: 4.83, state: "MAIN SEQUENCE" },
+            "sirius": { t: 9940, m: 2.06, r: 1.71, l: 25.4, mv: 1.42, state: "BINARY SYSTEM" },
+            "vega": { t: 9602, m: 2.135, r: 2.36, l: 40.12, mv: 0.58, state: "MAIN SEQUENCE" },
+            "altair": { t: 7550, m: 1.79, r: 1.63, l: 10.6, mv: 2.22, state: "MAIN SEQUENCE" },
+            "capella": { t: 4970, m: 2.57, r: 11.98, l: 78.7, mv: -0.48, state: "YELLOW GIANT" },
+            "rigel": { t: 12100, m: 21.0, r: 78.9, l: 120000, mv: -7.84, state: "BLUE SUPERGIANT" },
+            "betelgeuse": { t: 3500, m: 16.5, r: 764.0, l: 126000, mv: -5.85, state: "RED SUPERGIANT" },
+            "deneb": { t: 8525, m: 19.0, r: 203.0, l: 196000, mv: -8.38, state: "BLUE SUPERGIANT" },
+            "canopus": { t: 7400, m: 8.0, r: 71.0, l: 10700, mv: -5.71, state: "BRIGHT GIANT" },
+            "achernar": { t: 15000, m: 6.7, r: 9.3, l: 3150, mv: -2.77, state: "MAIN SEQUENCE" },
+            "hadar": { t: 25000, m: 12.0, r: 8.6, l: 41700, mv: -4.53, state: "BLUE GIANT" },
+            "acrux": { t: 28000, m: 17.8, r: 5.4, l: 25000, mv: -3.77, state: "BLUE SUBGIANT" },
+            "spica": { t: 25300, m: 11.43, r: 7.47, l: 20500, mv: -3.55, state: "BLUE GIANT" },
+            "antares": { t: 3660, m: 12.0, r: 680.0, l: 75000, mv: -5.28, state: "RED SUPERGIANT" },
+            "pollux": { t: 4666, m: 1.91, r: 8.8, l: 32.7, mv: 1.08, state: "RED GIANT" },
+            "fomalhaut": { t: 8590, m: 1.92, r: 1.84, l: 16.6, mv: 1.72, state: "MAIN SEQUENCE" },
+            "aldebaran": { t: 3900, m: 1.16, r: 44.1, l: 439.0, mv: -0.63, state: "RED GIANT" },
+            "brown dwarf": { t: 1500, m: 0.05, r: 0.1, l: 0.0001, mv: 18.0, state: "BROWN DWARF" },
+            "nebula": { t: 50, m: 5.0, r: 25.0, l: 0.01, mv: 12.0, state: "NEBULA" }
+        };
+
+        const galaxyDB = {
+            "milky way": { type: "BARRED", name: "Milky Way", diameter: 105700, appMag: "-20.5 (Integrated)" },
+            "andromeda": { type: "SPIRAL", name: "Andromeda (M31)", diameter: 220000, appMag: "+3.44" },
+            "m31": { type: "SPIRAL", name: "Andromeda (M31)", diameter: 220000, appMag: "+3.44" },
+            "triangulum": { type: "SPIRAL", name: "Triangulum (M33)", diameter: 60000, appMag: "+5.72" },
+            "m87": { type: "ELLIPTICAL", name: "Virgo A (M87)", diameter: 120000, appMag: "+8.6" },
+            "smc": { type: "IRREGULAR", name: "Small Magellanic Cloud", diameter: 7000, appMag: "+2.7" },
+            "lmc": { type: "IRREGULAR", name: "Large Magellanic Cloud", diameter: 14000, appMag: "+0.9" }
+        };
+
+        const galaxyTypes = ["SPIRAL", "BARRED", "ELLIPTICAL", "LENTICULAR", "IRREGULAR"];
+
+        let currentStar = { ...starDB.sun, age: 0 };
+        let hrPoint = null;
+        let currentSpaceMode = "LAB";
+        let autoEvolve = false;
+        let autoEvolveInterval = null;
+
+        function switchToLabView() {
+            if (currentSpaceMode !== "LAB") {
+                currentSpaceMode = "LAB";
+                document.getElementById('alternate-space-view').classList.add('hidden-space');
+                document.getElementById('stellar-lab-view').classList.remove('hidden-space');
+                const switchBtn = document.getElementById('btn-switch-space');
+                switchBtn.innerText = translations[currentLang].btnSwitchSpace;
+                switchBtn.style.background = "#16a085";
+            }
+        }
+
+        function switchToGalaxyView() {
+            if (currentSpaceMode !== "ALTERNATE") {
+                currentSpaceMode = "ALTERNATE";
+                document.getElementById('stellar-lab-view').classList.add('hidden-space');
+                document.getElementById('alternate-space-view').classList.remove('hidden-space');
+                const switchBtn = document.getElementById('btn-switch-space');
+                switchBtn.innerText = translations[currentLang].btnReturnLab;
+                switchBtn.style.background = "#e74c3c";
+            }
+        }
+
+        function getSpectralClass(t, state) {
+            if (state === "NEBULA") return "N";
+            if (state.includes("BLACK HOLE") || state.includes("NEUTRON")) return "X";
+            if (t >= 30000) return "O"; if (t >= 10000) return "B"; if (t >= 7500) return "A";
+            if (t >= 6000) return "F"; if (t >= 5200) return "G"; if (t >= 3700) return "K";
+            return "M";
+        }
+
+        function getStarColor(t, state) {
+            if (state === "NEBULA") return "#8e44ad";
+            if (state === "BROWN DWARF") return "#5e1a1a";
+            if (state.includes("BLACK HOLE")) return "#000000";
+            if (state.includes("NEUTRON")) return "#a6e3e9";
+            if (state.includes("WHITE DWARF")) return "#e0f7fa";
+            if (t > 30000) return "#9bb0ff"; if (t > 10000) return "#cad7ff";
+            if (t > 6000) return "#f8f7ff"; if (t > 5000) return "#fff4a6";
+            return "#ff5e41";
+        }
+
+        function calculateAbsoluteMagnitude(l) {
+            return 4.83 - (2.5 * Math.log10(Math.max(l, 0.00001)));
+        }
+
+        function updateHRDiagram(s) {
+            const xDot = 45 + ((6.0 - Math.log10(s.t || 1)) / (6.0 - 3.4)) * 335;
+            const yDot = 400 - ((Math.log10(s.l || 0.0001) - (-5)) / (7 - (-5))) * 380;
+            if (!hrPoint) {
+                hrPoint = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                hrPoint.setAttribute("r", 5);
+                hrPoint.setAttribute("stroke", "white");
+                hrPoint.setAttribute("stroke-width", "2");
+                document.getElementById('star-points').appendChild(hrPoint);
+            }
+            hrPoint.setAttribute("cx", Math.max(45, Math.min(380, xDot)));
+            hrPoint.setAttribute("cy", Math.max(20, Math.min(400, yDot)));
+            hrPoint.setAttribute("fill", getStarColor(s.t, s.state));
+        }
+
+        function updateVisuals() {
+            const s = currentStar;
+            const render = document.getElementById('star-render');
+
+            if (s.l === undefined) s.l = Math.pow(s.r, 2) * Math.pow(s.t / 5778, 4);
+            if (s.mv === undefined) s.mv = calculateAbsoluteMagnitude(s.l);
+
+            if (s.mv <= 1.00 && s.state !== "NEBULA" && !s.state.includes("BLACK HOLE")) {
+                render.classList.add('has-cross');
+            } else {
+                render.classList.remove('has-cross');
+            }
+
+            const stateTranslation = translations[currentLang].states[s.state] || s.state;
+            document.getElementById('type-val').innerText = stateTranslation;
+            document.getElementById('cat-val').innerText = getSpectralClass(s.t, s.state);
+            document.getElementById('m-val').innerText = s.m.toFixed(2);
+            document.getElementById('r-val').innerText = s.r.toFixed(2);
+            document.getElementById('t-val').innerText = Math.round(s.t).toLocaleString();
+            document.getElementById('mv-val').innerText = s.mv.toFixed(2);
+
+            if (s.state === "NEBULA") render.classList.add('nebula-style');
+            else render.classList.remove('nebula-style');
+
+            if (s.state === "BROWN DWARF") render.classList.add('is-brown-dwarf');
+            else render.classList.remove('is-brown-dwarf');
+
+            const color = getStarColor(s.t, s.state);
+            render.style.backgroundColor = color;
+            render.style.boxShadow = s.state === "NEBULA" ? "none" : (s.state.includes("BLACK HOLE") ? "0 0 25px #ffffff" : `0 0 60px ${color}`);
+
+            let visualSize = s.r * 15;
+            if (s.state.includes("GIANT") || s.state.includes("SUPERGIANT")) visualSize = 60 + (Math.log10(Math.max(s.r, 1)) * 25);
+            render.style.width = Math.min(Math.max(visualSize, 8), 250) + 'px';
+            render.style.height = Math.min(Math.max(visualSize, 8), 250) + 'px';
+
+            updateHRDiagram(s);
+        }
+
+        function triggerBoom(nextStateCallback) {
+            const vCont = document.getElementById('v-cont');
+            vCont.classList.add('boom-active');
+            setTimeout(() => {
+                vCont.classList.remove('boom-active');
+                if (nextStateCallback) nextStateCallback();
+            }, 600);
+        }
+
+        function evolveStarStep() {
+            let s = currentStar;
+
+            if (s.state === "RED DWARF" || s.state === "MAIN SEQUENCE" || s.state === "BINARY SYSTEM" || s.state === "BLUE GIANT" || s.state === "BLUE SUBGIANT") {
+                if (s.m < 0.5) {
+                    s.state = "WHITE DWARF";
+                    s.r = 0.15;
+                    s.t = 12000;
+                } else if (s.m >= 10) {
+                    s.state = "RED SUPERGIANT";
+                    s.r = s.r * 25 + 100;
+                    s.t = 3500;
+                } else {
+                    s.state = "RED GIANT";
+                    s.r = s.r * 10 + 15;
+                    s.t = 4000;
+                }
+                s.l = Math.pow(s.r, 2) * Math.pow(s.t / 5778, 4);
+                s.mv = calculateAbsoluteMagnitude(s.l);
+                updateVisuals();
+            }
+            else if (s.state === "RED GIANT" || s.state === "RED SUPERGIANT" || s.state === "YELLOW GIANT" || s.state === "BLUE SUPERGIANT" || s.state === "BRIGHT GIANT") {
+                const isHighMass = s.m >= 10;
+                s.state = "BOOM! (SUPERNOVA)";
+                updateVisuals();
+
+                triggerBoom(() => {
+                    if (isHighMass) {
+                        if (s.m >= 20) {
+                            s.state = "BLACK HOLE";
+                            s.r = 0.1;
+                            s.t = 0;
+                            s.l = 0.00001;
+                        } else {
+                            s.state = "NEUTRON STAR";
+                            s.r = 0.2;
+                            s.t = 100000;
+                            s.l = 0.01;
+                        }
+                    } else {
+                        s.state = "WHITE DWARF";
+                        s.r = 0.3;
+                        s.t = 25000;
+                        s.l = 0.001;
+                    }
+                    s.mv = calculateAbsoluteMagnitude(s.l);
+                    updateVisuals();
+                });
+            }
+            else if (s.state === "NEBULA") {
+                currentStar = createRandomStar();
+                updateVisuals();
+            }
+        }
+
+        function createRandomStar() {
+            let roll = Math.random();
+            let m, r, t, state;
+
+            if (roll < 0.75) {
+                m = 0.08 + Math.random() * 0.42;
+                r = Math.pow(m, 0.85);
+                t = 2500 + Math.random() * 1200;
+                state = "RED DWARF";
+            } else if (roll < 0.95) {
+                m = 0.5 + Math.random() * 7.5;
+                r = Math.pow(m, 0.7);
+                t = 3700 + (m * 800);
+                state = "MAIN SEQUENCE";
+            } else {
+                m = 8.0 + Math.random() * 42.0;
+                r = Math.pow(m, 0.6);
+                t = 10000 + (m * 500);
+                state = "BLUE SUPERGIANT";
+            }
+
+            let l = Math.pow(r, 2) * Math.pow(t / 5778, 4);
+            let mv = calculateAbsoluteMagnitude(l);
+            
+            return {
+                t: t, m: m, r: r, l: l, mv: mv,
+                state: state,
+                rot: 1, age: 0
+            };
+        }
+
+        function executeUniversalSearch() {
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+            if (!q) return;
+
+            if (galaxyDB[q]) {
+                switchToGalaxyView();
+                generateGalaxy(galaxyDB[q].type, galaxyDB[q]);
+            } 
+            else if (galaxyTypes.includes(q.toUpperCase())) {
+                switchToGalaxyView();
+                generateGalaxy(q.toUpperCase());
+            } 
+            else if (starDB[q]) {
+                switchToLabView();
+                currentStar = { ...starDB[q], age: 0 };
+                updateVisuals();
+            } 
+            else {
+                switchToLabView();
+                currentStar = createRandomStar();
+                updateVisuals();
+            }
+        }
+
+        document.getElementById('btn-universal-search').onclick = executeUniversalSearch;
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') executeUniversalSearch();
+        });
+
+        document.getElementById('btn-switch-space').onclick = function() {
+            if (currentSpaceMode === "LAB") {
+                switchToGalaxyView();
+                setTimeout(() => generateGalaxy(), 50);
+            } else {
+                switchToLabView();
+            }
+        };
+
+        document.getElementById('btn-nebula').onclick = () => {
+            switchToLabView();
+            currentStar = { ...starDB.nebula, age: 0 };
+            updateVisuals();
+        };
+
+        document.getElementById('btn-reset').onclick = () => {
+            switchToLabView();
+            currentStar = { ...starDB.sun, age: 0 };
+            updateVisuals();
+        };
+
+        document.getElementById('btn-gen').onclick = () => {
+            switchToLabView();
+            currentStar = createRandomStar();
+            updateVisuals();
+        };
+
+        document.getElementById('btn-step-evolve').onclick = () => {
+            switchToLabView();
+            evolveStarStep();
+        };
+
+        document.getElementById('btn-evolve').onclick = function() {
+            autoEvolve = !autoEvolve;
+            const t = translations[currentLang];
+            if (autoEvolve) {
+                this.innerText = t.btnEvolveOn;
+                this.style.background = "#27ae60";
+                autoEvolveInterval = setInterval(() => {
+                    if (currentSpaceMode === "LAB") evolveStarStep();
+                }, 3000);
+            } else {
+                this.innerText = t.btnEvolveOff;
+                this.style.background = "#e67e22";
+                clearInterval(autoEvolveInterval);
+            }
+        };
+
+        document.getElementById('btn-gen-galaxy').onclick = () => generateGalaxy();
+
+        // GALAXY RENDER ENGINE
+        const canvas = document.getElementById('galaxy-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeGalaxyCanvas() {
+            if (!canvas) return;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+
+        function calculateGalaxyStats(type, preset = null) {
+            let diameter, appMag, name;
+
+            if (preset) {
+                name = preset.name;
+                diameter = preset.diameter;
+                appMag = preset.appMag;
+            } else {
+                name = type;
+                switch(type) {
+                    case "ELLIPTICAL":
+                        diameter = Math.floor(50000 + Math.random() * 450000);
+                        appMag = "+" + (6.0 + Math.random() * 7.5).toFixed(2);
+                        break;
+                    case "LENTICULAR":
+                        diameter = Math.floor(30000 + Math.random() * 120000);
+                        appMag = "+" + (8.0 + Math.random() * 6.0).toFixed(2);
+                        break;
+                    case "IRREGULAR":
+                        diameter = Math.floor(3000 + Math.random() * 27000);
+                        appMag = "+" + (9.5 + Math.random() * 6.5).toFixed(2);
+                        break;
+                    case "BARRED":
+                    case "SPIRAL":
+                    default:
+                        diameter = Math.floor(20000 + Math.random() * 160000);
+                        appMag = "+" + (7.0 + Math.random() * 7.0).toFixed(2);
+                        break;
+                }
+            }
+
+            document.getElementById('galaxy-name-val').innerText = name;
+            document.getElementById('galaxy-diameter-val').innerText = `${diameter.toLocaleString()} ly`;
+            document.getElementById('galaxy-appmag-val').innerText = appMag;
+        }
+
+        function generateGalaxy(targetType = null, preset = null) {
+            resizeGalaxyCanvas();
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            const type = targetType || galaxyTypes[Math.floor(Math.random() * galaxyTypes.length)];
+
+            let stars = [];
+            const maxRadius = Math.min(width, height) * 0.38;
+
+            calculateGalaxyStats(type, preset);
+
+            if (type === "IRREGULAR") {
+                const numStars = 2400;
+                const numClusters = 4 + Math.floor(Math.random() * 5);
+                let clusters = [];
+
+                for (let c = 0; c < numClusters; c++) {
+                    clusters.push({
+                        x: centerX + (Math.random() - 0.5) * maxRadius * 1.3,
+                        y: centerY + (Math.random() - 0.5) * maxRadius * 1.3,
+                        radius: (0.15 + Math.random() * 0.25) * maxRadius
+                    });
+                }
+
+                for (let i = 0; i < numStars; i++) {
+                    let cluster = clusters[Math.floor(Math.random() * clusters.length)];
+                    let r = Math.pow(Math.random(), 1.5) * cluster.radius;
+                    let theta = Math.random() * Math.PI * 2;
+
+                    let x = cluster.x + r * Math.cos(theta);
+                    let y = cluster.y + r * Math.sin(theta);
+
+                    let colorPool = ['#9bb0ff', '#cad7ff', '#8e44ad', '#ff80ab', '#ffffff'];
+                    let color = colorPool[Math.floor(Math.random() * colorPool.length)];
+
+                    stars.push({
+                        x: x, y: y,
+                        size: Math.random() * 1.4 + 0.3,
+                        color: color,
+                        alpha: Math.random() * 0.75 + 0.2
+                    });
+                }
+            }
+            else if (type === "ELLIPTICAL") {
+                const numStars = 3200;
+                const axisRatio = 0.5 + Math.random() * 0.4;
+                const angle = Math.random() * Math.PI;
+
+                for (let i = 0; i < numStars; i++) {
+                    let distance = Math.pow(Math.random(), 2.5) * maxRadius;
+                    let theta = Math.random() * Math.PI * 2;
+                    let ex = distance * Math.cos(theta);
+                    let ey = distance * Math.sin(theta) * axisRatio;
+
+                    let rx = ex * Math.cos(angle) - ey * Math.sin(angle);
+                    let ry = ex * Math.sin(angle) + ey * Math.cos(angle);
+
+                    let color = Math.random() > 0.3 ? '#ffd59e' : '#ffe8c2';
+                    stars.push({
+                        x: centerX + rx,
+                        y: centerY + ry,
+                        size: Math.random() * 1.3 + 0.3,
+                        color: color,
+                        alpha: Math.random() * 0.6 + 0.3
+                    });
+                }
+            } 
+            else if (type === "LENTICULAR") {
+                const numStars = 3000;
+                const diskAngle = Math.random() * Math.PI;
+                const inclination = 0.2 + Math.random() * 0.3;
+
+                for (let i = 0; i < 800; i++) {
+                    let r = Math.pow(Math.random(), 2) * (maxRadius * 0.25);
+                    let theta = Math.random() * Math.PI * 2;
+                    stars.push({
+                        x: centerX + r * Math.cos(theta),
+                        y: centerY + r * Math.sin(theta),
+                        size: Math.random() * 1.5 + 0.4,
+                        color: '#fff0b3',
+                        alpha: Math.random() * 0.8 + 0.2
+                    });
+                }
+
+                for (let i = 0; i < numStars - 800; i++) {
+                    let r = (Math.random() * 0.85 + 0.15) * maxRadius;
+                    let theta = Math.random() * Math.PI * 2;
+
+                    let dx = r * Math.cos(theta);
+                    let dy = r * Math.sin(theta) * inclination;
+
+                    let rx = dx * Math.cos(diskAngle) - dy * Math.sin(diskAngle);
+                    let ry = dx * Math.sin(diskAngle) + dy * Math.cos(diskAngle);
+
+                    let color = r < maxRadius * 0.4 ? '#fffae6' : '#d2e1ff';
+                    stars.push({
+                        x: centerX + rx,
+                        y: centerY + ry,
+                        size: Math.random() * 1.1 + 0.3,
+                        color: color,
+                        alpha: Math.random() * 0.6 + 0.25
+                    });
+                }
+            } 
+            else {
+                const isBarred = (type === "BARRED");
+                const numStars = preset && preset.name.includes("Andromeda") ? 3800 : 2800;
+                const numArms = isBarred ? 2 : (preset && preset.name.includes("Andromeda") ? 2 : Math.floor(2 + Math.random() * 3));
+                const armWidth = 0.35;
+                const barLength = isBarred ? maxRadius * 0.35 : 0;
+                const barAngle = Math.random() * Math.PI * 2;
+
+                for (let i = 0; i < 600; i++) {
+                    let r = Math.random() * (maxRadius * 0.12);
+                    let theta = Math.random() * Math.PI * 2;
+                    stars.push({
+                        x: centerX + r * Math.cos(theta),
+                        y: centerY + r * Math.sin(theta),
+                        size: Math.random() * 1.6 + 0.4,
+                        color: '#fff4a6',
+                        alpha: Math.random() * 0.8 + 0.2
+                    });
+                }
+
+                if (isBarred) {
+                    for (let i = 0; i < 600; i++) {
+                        let dist = (Math.random() - 0.5) * barLength * 2;
+                        let offset = (Math.random() - 0.5) * 15;
+                        let px = dist * Math.cos(barAngle) - offset * Math.sin(barAngle);
+                        let py = dist * Math.sin(barAngle) + offset * Math.cos(barAngle);
+
+                        stars.push({
+                            x: centerX + px,
+                            y: centerY + py,
+                            size: Math.random() * 1.3 + 0.4,
+                            color: '#f8f7ff',
+                            alpha: Math.random() * 0.7 + 0.3
+                        });
+                    }
+                }
+
+                for (let i = 0; i < numStars; i++) {
+                    let armIndex = i % numArms;
+                    let baseAngle = isBarred 
+                        ? (armIndex === 0 ? barAngle : barAngle + Math.PI) 
+                        : (armIndex * (2 * Math.PI / numArms));
+
+                    let distance = Math.random();
+                    let r = isBarred 
+                        ? barLength + (distance * (maxRadius - barLength))
+                        : distance * maxRadius;
+
+                    let theta = baseAngle + (distance * 3.5);
+                    let offset = (Math.random() - 0.5) * armWidth * (r + 15);
+
+                    let x = centerX + (r * Math.cos(theta)) + Math.cos(theta + Math.PI / 2) * offset;
+                    let y = centerY + (r * Math.sin(theta)) + Math.sin(theta + Math.PI / 2) * offset;
+
+                    let color = r < maxRadius * 0.45 ? '#f8f7ff' : (Math.random() > 0.35 ? '#9bb0ff' : '#cad7ff');
+
+                    stars.push({
+                        x: x, y: y,
+                        size: Math.random() * 1.2 + 0.3,
+                        color: color,
+                        alpha: Math.random() * 0.7 + 0.3
+                    });
+                }
+            }
+
+            ctx.fillStyle = '#020205';
+            ctx.fillRect(0, 0, width, height);
+
+            let coreGlowRadius = type === "ELLIPTICAL" ? maxRadius * 0.45 : maxRadius * 0.28;
+            let coreColor = type === "ELLIPTICAL" ? 'rgba(255, 213, 158, 0.7)' : (type === "IRREGULAR" ? 'rgba(142, 68, 173, 0.35)' : 'rgba(255, 244, 166, 0.85)');
+            
+            let gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreGlowRadius);
+            gradient.addColorStop(0, coreColor);
+            gradient.addColorStop(0.4, 'rgba(142, 68, 173, 0.2)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, coreGlowRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            stars.forEach(star => {
+                ctx.fillStyle = star.color;
+                ctx.globalAlpha = star.alpha;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1.0;
+        }
+
+        window.addEventListener('resize', () => {
+            if (currentSpaceMode === "ALTERNATE") generateGalaxy();
+        });
+
+        // Initialize UI & Render
+        updateLanguageUI();
+    </script>
 </body>
 </html>
-
